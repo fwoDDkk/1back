@@ -1,10 +1,11 @@
-import TelegramBot from "node-telegram-bot-api";
-import dotenv from "dotenv";
+const TelegramBot = require("node-telegram-bot-api");
+const dotenv = require("dotenv");
+
 dotenv.config();
 
-export const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: false });
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: false });
 
-export const MANAGER_ID = process.env.MANAGER_ID;
+const MANAGER_ID = process.env.MANAGER_ID;
 
 // 🔔 Обробка успішної оплати зірками
 bot.on("message", async (msg) => {
@@ -31,3 +32,5 @@ bot.on("message", async (msg) => {
     }
   }
 });
+
+module.exports = { bot, MANAGER_ID };
