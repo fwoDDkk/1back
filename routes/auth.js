@@ -9,7 +9,7 @@ const router = express.Router();
 router.post("/telegram", async (req, res) => {
   const { initData, referrerId } = req.body;
 
-  
+
   // === 1️⃣ Перевірка наявності initData ===
   if (!initData) {
     return res.status(400).json({ message: "Missing initData" });
@@ -106,6 +106,7 @@ router.post("/telegram", async (req, res) => {
     // === 6️⃣ Генеруємо JWT токен ===
     const token = jwt.sign({ telegramId: finalUser.telegram_id }, JWT_SECRET, { expiresIn: "7d" });
 
+    
     // === 7️⃣ Відповідь клієнту ===
     res.json({
       success: true,
