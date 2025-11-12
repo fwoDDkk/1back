@@ -17,6 +17,7 @@ router.post("/sell", async (req, res) => {
     if (!stars || stars <= 0)
       return res.status(400).json({ success: false, message: "Invalid stars amount" });
 
+    
     const botToken = process.env.BOT_TOKEN;
     const providerToken = process.env.PROVIDER_TOKEN;
 
