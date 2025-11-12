@@ -4,34 +4,46 @@ const db = require("../db");
 const router = express.Router();
 
 // ==========================================================
-// ✅ Telegram Auth через initData
+// ✅ Telegram Auth через initData (з виправленою валідацією)
 // ==========================================================
 router.post("/telegram", async (req, res) => {
   const { initData } = req.body;
-  const BOT_TOKEN = process.env.BOT_TOKEN;
+  const BOT_TOKEN = process.env.BOT_TOKEN; // Переконайтеся, що ця змінна є
 
   try {
     if (!initData) return res.status(400).json({ message: "Missing initData" });
+
+    // ❗️❗️❗️ ПОЧАТОК ВИПРАВЛЕННЯ ❗️❗️❗️
+    // Це - новий, правильний спосіб валідації, взятий з вашого "робочого" прикладу.
 
     const data = new URLSearchParams(initData);
     const hash = data.get("hash");
     data.delete("hash");
 
-    const checkString = [...data.entries()]
-      .sort()
-      .map(([key, value]) => `${key}=${value}`)
-      .join("\n");
+    // Сортуємо та з'єднуємо параметри
+    const dataCheckString = Array.from(data.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${key}=${value}`)
+        .join("\n");
 
-    const secret = crypto.createHash("sha256").update(BOT_TOKEN).digest();
-    const hmac = crypto.createHmac("sha256", secret).update(checkString).digest("hex");
+    // Створюємо секретний ключ за новим методом
+    const secretKey = crypto.createHmac("sha256", "WebAppData").update(BOT_TOKEN).digest();
+    // Рахуємо хеш
+    const calculatedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
-    if (hmac !== hash)
-      return res.status(403).json({ success: false, message: "Invalid signature" });
+    if (calculatedHash !== hash) {
+        console.error("Invalid hash calculation.");
+        console.log("Received hash:", hash);
+        console.log("Calculated hash:", calculatedHash);
+        return res.status(403).json({ success: false, message: "Invalid signature" });
+    }
+    // ❗️❗️❗️ КІНЕЦЬ ВИПРАВЛЕННЯ ❗️❗️❗️
 
+    // 2. Робота з користувачем (ваш оригінальний код з першого файлу)
+    // Парсимо юзера з валідованих даних
     const user = JSON.parse(data.get("user"));
     const { id, first_name, username, photo_url } = user;
 
-    // ✅ Зберігаємо користувача в базі (якщо ще не існує)
     const result = await db.query("SELECT * FROM users WHERE telegram_id = $1", [id]);
     let savedUser;
 
@@ -46,10 +58,12 @@ router.post("/telegram", async (req, res) => {
       savedUser = result.rows[0];
     }
 
-    // ✅ Повертаємо токен (можна зробити JWT або просто hex)
+    // 3. Створення токена (ваш оригінальний код)
     const token = crypto.randomBytes(16).toString("hex");
 
+    // Відповідь успішна
     return res.json({ success: true, user: savedUser, token });
+    
   } catch (e) {
     console.error("Telegram auth error:", e);
     res.status(400).json({ success: false, message: "Auth parse error" });
