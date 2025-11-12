@@ -6,7 +6,7 @@ const db = require("../db");
 
 const router = express.Router();
 
-router.post("/telegram", async (req, res) => {
+router.post("/", async (req, res) => {
   const { initData, referrerId } = req.body;
 
 
@@ -106,7 +106,7 @@ router.post("/telegram", async (req, res) => {
     // === 6️⃣ Генеруємо JWT токен ===
     const token = jwt.sign({ telegramId: finalUser.telegram_id }, JWT_SECRET, { expiresIn: "7d" });
 
-    
+
     // === 7️⃣ Відповідь клієнту ===
     res.json({
       success: true,
