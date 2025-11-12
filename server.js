@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const { bot } = require("./utils/bot.js");
+// const { bot } = require("./utils/bot.js");
 const payRouter = require("./routes/pay.js");
 
 dotenv.config();
@@ -40,6 +40,6 @@ app.listen(4000, async () => {
   console.log("✅ Server started on port 4000");
 
   const domain = process.env.DOMAIN; // наприклад: https://stars-backend.onrender.com
-  await bot.setWebHook(`${domain}/api/pay/webhook`);
+  // await bot.setWebHook(`${domain}/api/pay/webhook`);
   console.log("📡 Webhook connected");
 });

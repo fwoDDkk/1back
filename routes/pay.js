@@ -55,49 +55,49 @@ router.post("/sell", async (req, res) => {
 // ======================================================
 // 📬 POST /api/pay/webhook — обробка успішного платежу
 // ======================================================
-router.post("/webhook", async (req, res) => {
-  try {
-    const update = req.body;
-    const message = update.message;
+// router.post("/webhook", async (req, res) => {
+//   try {
+//     const update = req.body;
+//     const message = update.message;
 
-    if (message?.successful_payment) {
-      const payment = message.successful_payment;
-      const payload = payment.invoice_payload;
+//     if (message?.successful_payment) {
+//       const payment = message.successful_payment;
+//       const payload = payment.invoice_payload;
 
-      if (!payload.startsWith("sell_")) return res.sendStatus(200);
+//       if (!payload.startsWith("sell_")) return res.sendStatus(200);
 
-      const [, telegramId, starsStr] = payload.split("_");
-      const stars = parseInt(starsStr, 10);
+//       const [, telegramId, starsStr] = payload.split("_");
+//       const stars = parseInt(starsStr, 10);
 
-      // ✅ Оновлюємо статус заявки
-      await db.query(
-        "UPDATE star_sales SET status = 'paid' WHERE telegram_id = $1 AND amount = $2",
-        [telegramId, stars]
-      );
+//       // ✅ Оновлюємо статус заявки
+//       await db.query(
+//         "UPDATE star_sales SET status = 'paid' WHERE telegram_id = $1 AND amount = $2",
+//         [telegramId, stars]
+//       );
 
-      // 🔔 Сповіщаємо менеджера
-      const botToken = process.env.BOT_TOKEN;
-      const managerChat = process.env.MANAGER_ID || process.env.ADMIN_CHAT_ID;
+//       // 🔔 Сповіщаємо менеджера
+//       const botToken = process.env.BOT_TOKEN;
+//       const managerChat = process.env.MANAGER_ID;
 
-      const messageText = `
-💰 *Надійшов продаж зірок!*
-👤 ID: ${telegramId}
-⭐ Кількість: ${stars}
-Статус: ✅ Оплачено
-`;
+//       const messageText = `
+// 💰 *Надійшов продаж зірок!*
+// 👤 ID: ${telegramId}
+// ⭐ Кількість: ${stars}
+// Статус: ✅ Оплачено
+// `;
 
-      await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        chat_id: managerChat,
-        text: messageText,
-        parse_mode: "Markdown",
-      });
-    }
+//       await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+//         chat_id: managerChat,
+//         text: messageText,
+//         parse_mode: "Markdown",
+//       });
+//     }
 
-    res.sendStatus(200);
-  } catch (err) {
-    console.error("Webhook error:", err);
-    res.sendStatus(500);
-  }
-});
+//     res.sendStatus(200);
+//   } catch (err) {
+//     console.error("Webhook error:", err);
+//     res.sendStatus(500);
+//   }
+// });
 
 module.exports = router;
