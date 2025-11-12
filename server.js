@@ -5,7 +5,7 @@ const cors = require("cors");
 
 const payRouter = require("./routes/pay");
 const authRouter = require("./routes/auth");
-const { bot } = require("./utils/bot");
+// const { bot } = require("./utils/bot");
 
 const app = express();
 app.use(cors());
