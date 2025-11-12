@@ -19,7 +19,7 @@ app.get("/", (req, res) => res.send("⭐ MiniApp Stars backend running"));
 app.listen(4000, async () => {
   console.log("✅ Server started on port 4000");
 
-  const domain = process.env.DOMAIN;
-  await bot.setWebHook(`${domain}/api/pay/webhook`);
-  console.log("📡 Webhook connected");
+  // const domain = process.env.DOMAIN;
+  // await bot.setWebHook(`${domain}/api/pay/webhook`);
+  // console.log("📡 Webhook connected");
 });
