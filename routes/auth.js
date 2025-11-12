@@ -9,6 +9,7 @@ const router = express.Router();
 router.post("/telegram", async (req, res) => {
   const { initData, referrerId } = req.body;
 
+  
   // === 1️⃣ Перевірка наявності initData ===
   if (!initData) {
     return res.status(400).json({ message: "Missing initData" });
