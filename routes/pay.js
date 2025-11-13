@@ -95,5 +95,26 @@ router.get("/history", async (req, res) => {
   }
 });
 
+router.post("/add-transaction", async (req, res) => {
+  try {
+    const { telegramId, username, stars, status } = req.body;
+
+    if (!telegramId || !stars)
+      return res.status(400).json({ success: false, message: "Invalid data" });
+
+    const orderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    await db.query(
+      `INSERT INTO transactions (telegram_id, username, amount, type, status, order_id)
+       VALUES ($1, $2, $3, 'sell', $4, $5)`,
+      [telegramId, username, stars, status || "paid", orderId]
+    );
+
+    res.json({ success: true, orderId });
+  } catch (err) {
+    console.error("Add transaction error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 module.exports = router;
