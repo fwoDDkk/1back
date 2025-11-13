@@ -73,7 +73,9 @@ router.post("/sell", async (req, res) => {
 // ======================================================
 router.get("/history", async (req, res) => {
   try {
-    const { telegramId } = req.user;
+    const telegramId = req.user?.telegramId || req.query.telegramId;
+    if (!telegramId)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const result = await db.query(
       `
@@ -91,5 +93,6 @@ router.get("/history", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 module.exports = router;
