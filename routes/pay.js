@@ -68,12 +68,13 @@ router.post("/sell", async (req, res) => {
   }
 });
 
+
 // ======================================================
 // 📜 GET /api/pay/history — історія транзакцій користувача
 // ======================================================
 router.get("/history", async (req, res) => {
   try {
-    const telegramId = req.user?.telegramId || req.query.telegramId;
+    const { telegramId } = req.user; // ✅ authMiddleware додає це
     if (!telegramId)
       return res.status(401).json({ success: false, message: "Unauthorized" });
 
