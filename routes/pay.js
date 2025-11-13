@@ -11,23 +11,25 @@ router.use(authMiddleware);
 // ======================================================
 router.post("/sell", async (req, res) => {
   try {
-    const { telegramId } = req.user;
+    const { telegramId, username } = req.user;
     const { stars } = req.body;
 
     if (!stars || stars <= 0)
       return res.status(400).json({ success: false, message: "Invalid stars amount" });
 
-    
     const botToken = process.env.BOT_TOKEN;
     const providerToken = process.env.PROVIDER_TOKEN;
 
-    // 🔹 Генеруємо Telegram інвойс
+    // 🔹 Унікальний order_id
+    const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+
+    // 🔹 Створюємо Telegram інвойс
     const invoiceResponse = await axios.post(
       `https://api.telegram.org/bot${botToken}/createInvoiceLink`,
       {
-        title: "Sell Stars",
+        title: "Продаж зірок",
         description: `Продаж ${stars}⭐ менеджеру`,
-        payload: `sell_${telegramId}_${stars}_${Date.now()}`,
+        payload: `sell_${telegramId}_${stars}_${orderId}`,
         provider_token: providerToken,
         currency: "XTR", // Telegram Stars
         prices: [{ label: "Stars", amount: stars }],
@@ -39,14 +41,27 @@ router.post("/sell", async (req, res) => {
 
     const invoiceLink = invoiceResponse.data.result;
 
-    // 💾 Записуємо заявку в базу
+    // 💾 Запис у таблицю star_sales
     await db.query(
       `INSERT INTO star_sales (telegram_id, amount, status)
        VALUES ($1, $2, 'pending')`,
       [telegramId, stars]
     );
 
-    res.json({ success: true, invoice_link: invoiceLink });
+    // 💾 Запис у таблицю transactions
+    await db.query(
+      `
+      INSERT INTO transactions (telegram_id, username, amount, order_id, type, status)
+      VALUES ($1, $2, $3, $4, 'sell', 'pending')
+      `,
+      [telegramId, username || null, stars, orderId]
+    );
+
+    res.json({
+      success: true,
+      invoice_link: invoiceLink,
+      order_id: orderId,
+    });
   } catch (err) {
     console.error("Sell Stars error:", err.response?.data || err.message);
     res.status(500).json({ success: false, message: "Server error" });
@@ -54,51 +69,27 @@ router.post("/sell", async (req, res) => {
 });
 
 // ======================================================
-// 📬 POST /api/pay/webhook — обробка успішного платежу
+// 📜 GET /api/pay/history — історія транзакцій користувача
 // ======================================================
-// router.post("/webhook", async (req, res) => {
-//   try {
-//     const update = req.body;
-//     const message = update.message;
+router.get("/history", async (req, res) => {
+  try {
+    const { telegramId } = req.user;
 
-//     if (message?.successful_payment) {
-//       const payment = message.successful_payment;
-//       const payload = payment.invoice_payload;
+    const result = await db.query(
+      `
+      SELECT order_id, amount, type, status, created_at
+      FROM transactions
+      WHERE telegram_id = $1
+      ORDER BY created_at DESC
+      `,
+      [telegramId]
+    );
 
-//       if (!payload.startsWith("sell_")) return res.sendStatus(200);
-
-//       const [, telegramId, starsStr] = payload.split("_");
-//       const stars = parseInt(starsStr, 10);
-
-//       // ✅ Оновлюємо статус заявки
-//       await db.query(
-//         "UPDATE star_sales SET status = 'paid' WHERE telegram_id = $1 AND amount = $2",
-//         [telegramId, stars]
-//       );
-
-//       // 🔔 Сповіщаємо менеджера
-//       const botToken = process.env.BOT_TOKEN;
-//       const managerChat = process.env.MANAGER_ID;
-
-//       const messageText = `
-// 💰 *Надійшов продаж зірок!*
-// 👤 ID: ${telegramId}
-// ⭐ Кількість: ${stars}
-// Статус: ✅ Оплачено
-// `;
-
-//       await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-//         chat_id: managerChat,
-//         text: messageText,
-//         parse_mode: "Markdown",
-//       });
-//     }
-
-//     res.sendStatus(200);
-//   } catch (err) {
-//     console.error("Webhook error:", err);
-//     res.sendStatus(500);
-//   }
-// });
+    res.json({ success: true, history: result.rows });
+  } catch (err) {
+    console.error("History error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 module.exports = router;
